@@ -3,13 +3,12 @@ from config import CHUNK_SIZE, CHUNK_OVERLAP
 
 
 def chunk_documents(documents):
-    """Split documents into chunks for embedding."""
+    # Separator order matters — prefer paragraph breaks over mid-sentence splits
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
         separators=["\n\n", "\n", ".", " ", ""]
     )
-
     chunks = splitter.split_documents(documents)
-    print(f"✅ Total chunks created: {len(chunks)}")
+    print(f"Split into {len(chunks)} chunks (size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP})")
     return chunks

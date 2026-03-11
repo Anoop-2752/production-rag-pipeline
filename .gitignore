@@ -1,4 +1,10 @@
-# Byte-compiled / optimized / DLL files
+# ── Project-specific ─────────────────────────────────
+faiss_index/
+data/
+evaluation_results.csv
+*.csv
+
+# ── Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
 *$py.class

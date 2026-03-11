@@ -1,11 +1,30 @@
-langchain
+# LangChain
+langchain-core
 langchain-community
 langchain-groq
+langchain-huggingface
+langchain-text-splitters
+
+# LLM & embeddings
+groq
 sentence-transformers
+
+# Vector store & retrieval
 faiss-cpu
+rank-bm25
+
+# Document parsing
 pymupdf
+
+# Evaluation
 ragas
+datasets
+
+# Observability
 langsmith
+
+# App & utilities
 streamlit
 python-dotenv
 pandas
+requests

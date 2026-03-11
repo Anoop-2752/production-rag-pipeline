@@ -8,7 +8,11 @@ from config import TOP_K
 
 
 class EnsembleRetriever(BaseRetriever):
-    """Simple hybrid retriever that merges results from multiple retrievers."""
+    """
+    Reciprocal Rank Fusion over multiple retrievers.
+    Each retriever contributes a weighted score based on result rank,
+    then results are merged and deduplicated.
+    """
     retrievers: list
     weights: List[float]
 
@@ -31,8 +35,9 @@ class EnsembleRetriever(BaseRetriever):
 
 def get_retriever(chunks=None):
     """
-    Hybrid retriever = FAISS (semantic) + BM25 (keyword).
-    This is more powerful than pure semantic search alone.
+    Returns a hybrid retriever combining dense (FAISS) and sparse (BM25) search.
+    If chunks aren't provided, falls back to semantic-only — useful when loading
+    an existing index without re-ingesting documents.
     """
     vector_store = load_vector_store()
     semantic_retriever = vector_store.as_retriever(
@@ -41,15 +46,12 @@ def get_retriever(chunks=None):
     )
 
     if chunks is None:
-        print("✅ Using semantic retriever only")
         return semantic_retriever
 
     bm25_retriever = BM25Retriever.from_documents(chunks)
     bm25_retriever.k = TOP_K
 
-    hybrid_retriever = EnsembleRetriever(
+    return EnsembleRetriever(
         retrievers=[semantic_retriever, bm25_retriever],
         weights=[0.5, 0.5]
     )
-    print("✅ Hybrid retriever ready (semantic + BM25)")
-    return hybrid_retriever

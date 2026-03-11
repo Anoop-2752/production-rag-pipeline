@@ -11,8 +11,10 @@ from retrieval.embedder import get_embeddings
 
 def _fallback_faithfulness(answer: str, contexts: list) -> float:
     """
-    Keyword-overlap faithfulness when RAGAS returns NaN.
-    Checks what fraction of answer sentences are supported by the retrieved context.
+    Trigram-overlap fallback for when RAGAS faithfulness returns NaN.
+    This happens when the LLM doesn't produce valid JSON for statement extraction.
+    Scores each answer sentence by checking if any 3-word phrase appears in the context.
+    Not a perfect substitute, but beats reporting NaN.
     """
     sentences = [s.strip() for s in re.split(r"[.!?\n]", answer) if len(s.strip()) > 10]
     if not sentences:
@@ -32,35 +34,20 @@ def _fallback_faithfulness(answer: str, contexts: list) -> float:
 
 def run_evaluation(rag_chain, retriever, test_questions: list, ground_truths: list):
     """
-    Run RAGAS evaluation on the RAG pipeline.
-
-    Args:
-        rag_chain: The built RAG chain
-        retriever: The retriever used in the pipeline
-        test_questions: List of questions to evaluate
-        ground_truths: List of expected answers
-
-    Returns:
-        DataFrame with evaluation scores
+    Runs RAGAS evaluation over a set of questions and reference answers.
+    Returns a DataFrame with per-question scores and the raw RAGAS results object.
     """
-    print("\n📊 Running RAGAS Evaluation...\n")
-
-    answers = []
-    contexts = []
+    answers, contexts = [], []
 
     for question in test_questions:
-        # Get answer from RAG chain
         answer = rag_chain.invoke(question)
         answers.append(answer)
 
-        # Get retrieved context
         docs = retriever.invoke(question)
-        context = [doc.page_content for doc in docs]
-        contexts.append(context)
+        contexts.append([doc.page_content for doc in docs])
 
-        print(f"✅ Evaluated: {question[:50]}...")
+        print(f"  evaluated: {question[:60]}")
 
-    # Build evaluation dataset (RAGAS 0.4+ key names)
     eval_dataset = Dataset.from_dict({
         "user_input": test_questions,
         "response": answers,
@@ -68,30 +55,22 @@ def run_evaluation(rag_chain, retriever, test_questions: list, ground_truths: li
         "reference": ground_truths,
     })
 
-    # Wrap LLM and embeddings for RAGAS
     llm = LangchainLLMWrapper(get_llm())
     embeddings = LangchainEmbeddingsWrapper(get_embeddings())
 
-    # Run evaluation
     results = evaluate(
         dataset=eval_dataset,
         metrics=METRICS,
         llm=llm,
         embeddings=embeddings,
     )
-
-    # Convert to DataFrame
     df = results.to_pandas()
 
-    # Fix NaN faithfulness with keyword-overlap fallback
+    # Groq sometimes fails the faithfulness JSON extraction — patch with trigram fallback
     if "faithfulness" in df.columns and df["faithfulness"].isna().any():
-        print("⚠️  Faithfulness NaN detected — applying fallback scoring...")
+        print("faithfulness NaN detected, applying trigram fallback")
         for i, row in df.iterrows():
             if pd.isna(row["faithfulness"]):
-                score = _fallback_faithfulness(
-                    answers[i], contexts[i]
-                )
-                df.at[i, "faithfulness"] = score
-        print("✅ Fallback faithfulness scores applied")
+                df.at[i, "faithfulness"] = _fallback_faithfulness(answers[i], contexts[i])
 
     return df, results

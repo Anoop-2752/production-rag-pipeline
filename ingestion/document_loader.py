@@ -4,18 +4,20 @@ from config import DATA_DIR
 
 
 def load_pdf(file_path: str):
-    """Load a single PDF file."""
     loader = PyMuPDFLoader(file_path)
     documents = loader.load()
-    print(f"✅ Loaded: {file_path} — {len(documents)} pages")
+    print(f"Loaded {file_path} ({len(documents)} pages)")
     return documents
 
 
 def load_all_pdfs(directory: str = DATA_DIR):
-    """Load all PDFs from the data directory."""
+    """
+    Recursively loads all PDFs under `directory`.
+    Creates the directory if it doesn't exist yet — useful on first run.
+    """
     if not os.path.exists(directory):
         os.makedirs(directory)
-        print(f"📁 Created directory: {directory}")
+        print(f"Created data directory at {directory}")
 
     loader = DirectoryLoader(
         directory,
@@ -24,5 +26,5 @@ def load_all_pdfs(directory: str = DATA_DIR):
         show_progress=True
     )
     documents = loader.load()
-    print(f"✅ Total pages loaded: {len(documents)}")
+    print(f"Loaded {len(documents)} pages across all PDFs")
     return documents
