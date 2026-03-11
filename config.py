@@ -6,7 +6,7 @@ load_dotenv()
 
 # ── Configuration constants ─────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-LLM_MODEL = os.getenv("LLM_MODEL", "llama3-8b-8192")
+LLM_MODEL = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
 LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
 
 # ── Chunking ────────────────────────────────────────────
@@ -15,6 +15,7 @@ CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 200))
 
 # ── Retrieval ───────────────────────────────────────────
 TOP_K = int(os.getenv("TOP_K", 5))
+TEMPERATURE = float(os.getenv("TEMPERATURE", 0.0))
 
 # ── Embeddings ──────────────────────────────────────────
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
