@@ -149,11 +149,13 @@ production-rag-pipeline/
 ## 💡 Usage
 
 1. Open the app at `http://localhost:8501`
-2. Upload any PDF using the sidebar
+2. Upload any PDF using the sidebar (or drop one directly into the `data/` folder)
 3. Click **Build Knowledge Base** to index it
 4. Ask questions in the **Chat** tab
 5. Run RAGAS evaluation in the **Evaluation** tab
 6. Monitor traces at [smith.langchain.com](https://smith.langchain.com)
+
+> **Testing tip:** You can place a PDF directly in the `data/` folder and run `streamlit run dashboard/ui.py` — then upload it via the sidebar to build the index.
 
 ---
 
