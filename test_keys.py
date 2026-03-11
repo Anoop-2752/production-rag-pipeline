@@ -1,27 +1,17 @@
 import os
-import requests
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# ── Configuration constants ─────────────────────────────
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-LLM_MODEL = os.getenv("LLM_MODEL", "llama3-8b-8192")
-LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
 
 # ── Test Groq ──────────────────────────────────────────
 def test_groq():
     from langchain_groq import ChatGroq
     from langchain_core.messages import HumanMessage
 
-    if not GROQ_API_KEY:
-        print("❌ Groq failed: GROQ_API_KEY is not set")
-        return
-
     try:
         llm = ChatGroq(
-            api_key=GROQ_API_KEY,
-            model=LLM_MODEL
+            api_key=os.getenv("GROQ_API_KEY"),
+            model="llama-3.3-70b-versatile"
         )
         response = llm.invoke([HumanMessage(content="Say 'Groq is working!' and nothing else.")])
         print("✅ Groq:", response.content)
@@ -31,11 +21,10 @@ def test_groq():
 
 # ── Test LangSmith ─────────────────────────────────────
 def test_langsmith():
-    if not LANGCHAIN_API_KEY:
-        print("❌ LangSmith failed: LANGCHAIN_API_KEY is not set")
-        return
+    import requests
 
-    headers = {"x-api-key": LANGCHAIN_API_KEY}
+    api_key = os.getenv("LANGCHAIN_API_KEY")
+    headers = {"x-api-key": api_key}
 
     try:
         response = requests.get(
