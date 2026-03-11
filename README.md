@@ -189,6 +189,5 @@ Most RAG projects have no way to measure quality. RAGAS gives objective, automat
 ## 🙋 Author
 
 **Anoop Krishna** — AI/ML Engineer
-- [LinkedIn](https://linkedin.com)
-- [GitHub](https://github.com)
-- [Portfolio](https://portfolio.com)
+- [LinkedIn](https://www.linkedin.com/in/anoopkrishna2752/)
+- [Portfolio](https://anoop-portfolio-nu.vercel.app/)
