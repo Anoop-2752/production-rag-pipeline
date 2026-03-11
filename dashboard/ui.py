@@ -1,15 +1,11 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import streamlit as st
 import pandas as pd
 import time
-from ingestion.document_loader import load_pdf
-from ingestion.chunker import chunk_documents
-from retrieval.vector_store import build_vector_store, load_vector_store
-from retrieval.retriever import get_retriever
-from generation.chain import build_rag_chain
-from evaluation.evaluator import run_evaluation
-import os
 
-# ── Page Config ───────────────────────────────────────
 st.set_page_config(
     page_title="RAG Intelligence",
     page_icon="⚡",
@@ -20,17 +16,12 @@ st.set_page_config(
 # ── Premium CSS ────────────────────────────────────────
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-    /* ── Global ── */
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+    html, body, * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; }
     .main { background-color: #080b14; }
-    .block-container { padding: 2rem 2.5rem 2rem 2.5rem; }
+    .block-container { padding: 2rem 2.5rem; }
 
-    /* ── Hide Streamlit chrome ── */
-    #MainMenu, footer, header { visibility: hidden; }
+    #MainMenu, footer { visibility: hidden; }
 
-    /* ── Gradient hero header ── */
     .hero-header {
         background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
         border-radius: 16px;
@@ -71,7 +62,6 @@ st.markdown("""
         margin: 0;
     }
 
-    /* ── Tabs ── */
     .stTabs [data-baseweb="tab-list"] {
         gap: 4px;
         background: rgba(255,255,255,0.03);
@@ -92,7 +82,6 @@ st.markdown("""
     }
     .stTabs [data-baseweb="tab-border"] { display: none; }
 
-    /* ── Glassmorphism cards ── */
     .glass-card {
         background: rgba(255,255,255,0.03);
         backdrop-filter: blur(12px);
@@ -102,7 +91,6 @@ st.markdown("""
         margin-bottom: 1rem;
     }
 
-    /* ── Metric cards ── */
     .metric-card {
         background: linear-gradient(145deg, rgba(99,102,241,0.08), rgba(139,92,246,0.04));
         border: 1px solid rgba(99,102,241,0.2);
@@ -111,16 +99,8 @@ st.markdown("""
         text-align: center;
         transition: transform 0.2s ease, border-color 0.2s ease;
     }
-    .metric-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(99,102,241,0.5);
-    }
-    .metric-value {
-        font-size: 2rem;
-        font-weight: 700;
-        line-height: 1;
-        margin-bottom: 0.4rem;
-    }
+    .metric-card:hover { transform: translateY(-2px); border-color: rgba(99,102,241,0.5); }
+    .metric-value { font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 0.4rem; }
     .metric-label {
         font-size: 0.75rem;
         color: rgba(255,255,255,0.4);
@@ -133,7 +113,6 @@ st.markdown("""
     .metric-bad   { color: #f87171; }
     .metric-na    { color: rgba(255,255,255,0.3); }
 
-    /* ── Pipeline status badge ── */
     .status-badge {
         display: inline-flex;
         align-items: center;
@@ -143,28 +122,14 @@ st.markdown("""
         font-size: 0.78rem;
         font-weight: 600;
     }
-    .status-active {
-        background: rgba(52,211,153,0.12);
-        border: 1px solid rgba(52,211,153,0.3);
-        color: #34d399;
-    }
-    .status-inactive {
-        background: rgba(248,113,113,0.1);
-        border: 1px solid rgba(248,113,113,0.25);
-        color: #f87171;
-    }
-    .status-dot {
-        width: 7px; height: 7px;
-        border-radius: 50%;
-        display: inline-block;
-    }
-    .dot-active  { background: #34d399; box-shadow: 0 0 6px #34d399; }
+    .status-active  { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); color: #34d399; }
+    .status-inactive { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: #f87171; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .dot-active   { background: #34d399; box-shadow: 0 0 6px #34d399; }
     .dot-inactive { background: #f87171; }
 
-    /* ── Chat messages ── */
     .stChatMessage { background: rgba(255,255,255,0.03) !important; border-radius: 12px !important; }
 
-    /* ── Buttons ── */
     .stButton > button {
         background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
         color: white !important;
@@ -176,12 +141,8 @@ st.markdown("""
         letter-spacing: 0.02em !important;
         transition: opacity 0.2s ease, transform 0.2s ease !important;
     }
-    .stButton > button:hover {
-        opacity: 0.88 !important;
-        transform: translateY(-1px) !important;
-    }
+    .stButton > button:hover { opacity: 0.88 !important; transform: translateY(-1px) !important; }
 
-    /* ── Inputs ── */
     .stTextInput > div > div > input,
     .stChatInput > div > div > textarea {
         background: rgba(255,255,255,0.04) !important;
@@ -194,7 +155,6 @@ st.markdown("""
         box-shadow: 0 0 0 2px rgba(99,102,241,0.2) !important;
     }
 
-    /* ── File uploader ── */
     [data-testid="stFileUploader"] {
         background: rgba(255,255,255,0.02);
         border: 1px dashed rgba(99,102,241,0.4);
@@ -202,9 +162,8 @@ st.markdown("""
         padding: 0.5rem;
     }
 
-    /* ── Sidebar ── */
     [data-testid="stSidebar"] {
-        background: rgba(8, 11, 20, 0.95) !important;
+        background: rgba(8,11,20,0.95) !important;
         border-right: 1px solid rgba(255,255,255,0.06) !important;
     }
     .sidebar-section-title {
@@ -224,13 +183,9 @@ st.markdown("""
         padding: 0.5rem 0;
     }
 
-    /* ── Divider ── */
     hr { border-color: rgba(255,255,255,0.06) !important; }
-
-    /* ── Dataframe ── */
     .stDataFrame { border-radius: 12px; overflow: hidden; }
 
-    /* ── Section label ── */
     .section-label {
         font-size: 0.75rem;
         font-weight: 600;
@@ -240,7 +195,6 @@ st.markdown("""
         margin-bottom: 0.8rem;
     }
 
-    /* ── Architecture box ── */
     .arch-box {
         background: rgba(255,255,255,0.02);
         border: 1px solid rgba(255,255,255,0.07);
@@ -253,7 +207,6 @@ st.markdown("""
     }
     .arch-highlight { color: #a78bfa; font-weight: 600; }
 
-    /* ── Tech badge ── */
     .tech-badge {
         display: inline-block;
         background: rgba(99,102,241,0.1);
@@ -268,7 +221,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ── Session State ─────────────────────────────────────
+# ── Session State ──────────────────────────────────────
 for key, default in [
     ("retriever", None), ("chain", None), ("chunks", None),
     ("eval_df", None), ("chat_history", [])
@@ -291,28 +244,44 @@ with st.sidebar:
     )
 
     if uploaded_file:
-        save_path = f"data/{uploaded_file.name}"
+        save_path = os.path.join("data", uploaded_file.name)
         os.makedirs("data", exist_ok=True)
-        with open(save_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        st.success(f"Uploaded: {uploaded_file.name}")
+        try:
+            with open(save_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            st.success(f"Uploaded: {uploaded_file.name}")
+        except Exception as e:
+            st.error(f"Could not save file: {e}")
 
         if st.button("Build Knowledge Base", use_container_width=True):
-            with st.spinner("Loading & chunking document…"):
-                docs = load_pdf(save_path)
-                chunks = chunk_documents(docs)
-                st.session_state.chunks = chunks
-            with st.spinner("Building vector store…"):
-                build_vector_store(chunks)
-            with st.spinner("Initializing pipeline…"):
-                retriever = get_retriever(chunks)
-                chain = build_rag_chain(retriever)
-                st.session_state.retriever = retriever
-                st.session_state.chain = chain
-            st.success(f"{len(chunks)} chunks indexed.")
+            # Import inside the handler so the initial page load stays fast
+            from ingestion.document_loader import load_pdf
+            from ingestion.chunker import chunk_documents
+            from retrieval.vector_store import build_vector_store
+            from retrieval.retriever import get_retriever
+            from generation.chain import build_rag_chain
+
+            try:
+                with st.spinner("Loading & chunking document…"):
+                    docs = load_pdf(save_path)
+                    chunks = chunk_documents(docs)
+                    st.session_state.chunks = chunks
+                with st.spinner("Building vector store…"):
+                    build_vector_store(chunks)
+                with st.spinner("Initializing pipeline…"):
+                    retriever = get_retriever(chunks)
+                    chain = build_rag_chain(retriever)
+                    st.session_state.retriever = retriever
+                    st.session_state.chain = chain
+                st.success(f"Done — {len(chunks)} chunks indexed.")
+            except Exception as e:
+                st.error(f"Build failed: {e}")
+                st.exception(e)
 
     st.markdown('<div class="sidebar-section-title">Index</div>', unsafe_allow_html=True)
     if st.button("Load Existing Index", use_container_width=True):
+        from retrieval.retriever import get_retriever
+        from generation.chain import build_rag_chain
         try:
             with st.spinner("Loading…"):
                 retriever = get_retriever(st.session_state.chunks)
@@ -321,7 +290,8 @@ with st.sidebar:
                 st.session_state.chain = chain
             st.success("Index loaded.")
         except Exception as e:
-            st.error(str(e))
+            st.error(f"Failed to load index: {e}")
+            st.exception(e)
 
     st.markdown('<hr>', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-section-title">Status</div>', unsafe_allow_html=True)
@@ -392,7 +362,6 @@ with tab1:
         if st.session_state.chat_history:
             if st.button("Clear conversation"):
                 st.session_state.chat_history = []
-                st.rerun()
 
 
 # ── TAB 2: Evaluation ─────────────────────────────────
@@ -421,6 +390,7 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Run Evaluation", use_container_width=True):
+            from evaluation.evaluator import run_evaluation
             questions = [q for q in [q1, q2, q3] if q.strip()]
             answers   = [a for a in [a1, a2, a3] if a.strip()]
 
@@ -428,7 +398,7 @@ with tab2:
                 st.warning("Enter at least one question.")
             else:
                 with st.spinner("Running RAGAS evaluation — this takes 2–3 minutes…"):
-                    df, results = run_evaluation(
+                    df, _ = run_evaluation(
                         st.session_state.chain,
                         st.session_state.retriever,
                         questions, answers

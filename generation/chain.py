@@ -14,7 +14,12 @@ def format_context(docs):
 
 def build_rag_chain(retriever):
     llm = get_llm()
-    tracer = LangChainTracer(project_name="production-rag-pipeline")
+
+    try:
+        tracer = LangChainTracer(project_name="production-rag-pipeline")
+        callbacks = [tracer]
+    except Exception:
+        callbacks = []
 
     chain = (
         {
@@ -24,6 +29,6 @@ def build_rag_chain(retriever):
         | RAG_PROMPT
         | llm
         | StrOutputParser()
-    ).with_config({"callbacks": [tracer]})
+    ).with_config({"callbacks": callbacks})
 
     return chain

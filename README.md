@@ -80,15 +80,10 @@ git clone https://github.com/YOUR_USERNAME/production-rag-pipeline.git
 cd production-rag-pipeline
 ```
 
-### 2. Create virtual environment
+### 2. Create conda environment
 ```bash
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# Mac/Linux
-source venv/bin/activate
+conda create -n rag python=3.10
+conda activate rag
 ```
 
 ### 3. Install dependencies
@@ -112,7 +107,7 @@ Get your free API keys:
 
 ### 5. Run the app
 ```bash
-streamlit run app.py
+streamlit run dashboard/ui.py
 ```
 
 ---
@@ -144,7 +139,6 @@ production-rag-pipeline/
 ├── dashboard/
 │   └── ui.py                  # Streamlit dashboard
 │
-├── app.py                     # Entry point
 ├── config.py                  # Configuration and settings
 ├── requirements.txt           # Dependencies
 └── .env                       # API keys (never committed)
