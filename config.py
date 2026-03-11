@@ -9,6 +9,21 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 LLM_MODEL = os.getenv("LLM_MODEL", "llama3-8b-8192")
 LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
 
+# ── Chunking ────────────────────────────────────────────
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 1000))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 200))
+
+# ── Retrieval ───────────────────────────────────────────
+TOP_K = int(os.getenv("TOP_K", 5))
+
+# ── Embeddings ──────────────────────────────────────────
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+
+# ── Paths ───────────────────────────────────────────────
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.getenv("DATA_DIR", os.path.join(BASE_DIR, "data"))
+FAISS_INDEX_PATH = os.getenv("FAISS_INDEX_PATH", os.path.join(BASE_DIR, "faiss_index"))
+
 # ── Test Groq ──────────────────────────────────────────
 def test_groq():
     from langchain_groq import ChatGroq
